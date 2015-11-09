@@ -1,0 +1,4 @@
+[package]
+name = "pa_simple"
+version = "0.1.0"
+authors = ["Michael Wilson <wilsoniya@gmail.com>"]
