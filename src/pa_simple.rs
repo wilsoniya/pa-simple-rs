@@ -25,10 +25,12 @@
 // Flush the playback or record buffer. More...
 // int 	pa_simple_flush (pa_simple *s, int *error)
 
-use libc::{c_int, c_char, size_t, free, c_void};
 use std::ffi::{CString, CStr};
+use std::marker::PhantomData;
 use std::ptr;
 use std::str::from_utf8;
+
+use libc::{c_int, c_char, size_t, free, c_void};
 
 #[link(name = "pulse-simple")]
 #[link(name = "pulse")]
@@ -69,9 +71,9 @@ static PA_SAMPLE_S16LE: c_int = 3_i32;
 /// and
 /// [pa_stream_direction](http://freedesktop.org/software/pulseaudio/doxygen/def_8h.html#a7311932553b3f7962a092906576bc347).
 pub enum StreamDirection {
-    /// Invalid direction.
-    NoDirection = 0,
-    /// Playback stream.
+//  /// Invalid direction.
+//  NoDirection = 0,
+//  /// Playback stream.
     Playback = 1,
     /// Record stream.
     Record = 2,
@@ -110,10 +112,10 @@ pub enum SampleFormat {
     S24_32LE,
     /// Signed 24 Bit PCM in LSB of 32 Bit words, big endian.
     S24_32BE,
-    /// Upper limit of valid sample types.
-    MAX,
-    /// An invalid value.
-    INVALID = -1,
+//  /// Upper limit of valid sample types.
+//  MAX,
+//  /// An invalid value.
+//  INVALID = -1,
 }
 
 // typedef struct pa_simple pa_simple
@@ -129,16 +131,17 @@ struct pa_sample_spec {
 }
 
 /// pulseaudio manager type.
-pub struct PulseAudio {
+pub struct PulseAudio<T> {
     ptr: *mut pa_simple,
     sample_rate: usize,
+    phantom: PhantomData<T>,
 }
 
-impl PulseAudio {
+impl<T> PulseAudio<T> {
     /// Constructs a new `PulseAudio`.
     pub fn new(pa_name: &str, stream_name: &str,
                stream_direction: StreamDirection,
-               sample_rate: usize) -> PulseAudio {
+               sample_rate: usize) -> PulseAudio<T> {
         let mut err: c_int = 0;
 
         let mut s_spec = pa_sample_spec{
@@ -157,9 +160,10 @@ impl PulseAudio {
                 ptr::null_mut::<u8>() as *mut u8,
                 ptr::null_mut::<u8>() as *mut u8,
                 &mut err);
-            PulseAudio::handle_error(err);
+            PulseAudio::<T>::handle_error(err);
 
-            PulseAudio { ptr: pa, sample_rate: sample_rate }
+            PulseAudio { ptr: pa, sample_rate: sample_rate,
+                phantom: PhantomData }
         }
     }
 
@@ -172,7 +176,7 @@ impl PulseAudio {
     }
 }
 
-impl Drop for PulseAudio {
+impl<T> Drop for PulseAudio<T> {
     fn drop(&mut self) {
         unsafe {
             ptr::read(self.ptr);
